@@ -26,6 +26,7 @@ Options:
     --model openrouter     LLM backend: openrouter (default) or ollama
     --ollama-model NAME    Ollama model name (default: qwen3)
     --raw                  Skip extraction, ingest user messages directly
+    --include-trivial      Include short/untitled conversations normally filtered
     --verbose              Show full thoughts during processing
     --report FILE          Write a markdown report of everything imported
     --ingest-endpoint      Use INGEST_URL/INGEST_KEY instead of Supabase direct insert
@@ -727,6 +728,7 @@ Examples:
     parser.add_argument("--model", choices=["openrouter", "ollama"], default="openrouter", help="LLM backend (default: openrouter)")
     parser.add_argument("--ollama-model", default="qwen3", help="Ollama model name (default: qwen3)")
     parser.add_argument("--raw", action="store_true", help="Skip extraction, ingest user messages directly")
+    parser.add_argument("--include-trivial", action="store_true", help="Include short/untitled conversations normally filtered out")
     parser.add_argument("--verbose", action="store_true", help="Show full thoughts during processing")
     parser.add_argument("--report", type=str, metavar="FILE", help="Write a markdown report of everything imported")
     parser.add_argument("--ingest-endpoint", action="store_true", help="Use INGEST_URL/INGEST_KEY instead of Supabase direct insert")

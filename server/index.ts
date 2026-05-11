@@ -458,29 +458,51 @@ server.registerTool(
         extractMetadata(content),
       ]);
 
+      // Try upsert_thought RPC first (available if content-fingerprint-dedup primitive is installed)
       const { data: upsertResult, error: upsertError } = await supabase.rpc("upsert_thought", {
         p_content: content,
         p_payload: { metadata: { ...metadata, source: "mcp" } },
       });
 
-      if (upsertError) {
+      let thoughtId: string;
+
+      // PGRST202 = function not found; fall back to standard insert for setups without dedup
+      if (upsertError && upsertError.code === "PGRST202") {
+        const { data: insertData, error: insertError } = await supabase
+          .from("thoughts")
+          .insert({
+            content,
+            embedding,
+            metadata: { ...metadata, source: "mcp" },
+          })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          return {
+            content: [{ type: "text" as const, text: `Failed to capture: ${insertError.message}` }],
+            isError: true,
+          };
+        }
+        thoughtId = insertData.id;
+      } else if (upsertError) {
         return {
           content: [{ type: "text" as const, text: `Failed to capture: ${upsertError.message}` }],
           isError: true,
         };
-      }
+      } else {
+        thoughtId = upsertResult?.id;
+        const { error: embError } = await supabase
+          .from("thoughts")
+          .update({ embedding })
+          .eq("id", thoughtId);
 
-      const thoughtId = upsertResult?.id;
-      const { error: embError } = await supabase
-        .from("thoughts")
-        .update({ embedding })
-        .eq("id", thoughtId);
-
-      if (embError) {
-        return {
-          content: [{ type: "text" as const, text: `Failed to save embedding: ${embError.message}` }],
-          isError: true,
-        };
+        if (embError) {
+          return {
+            content: [{ type: "text" as const, text: `Failed to save embedding: ${embError.message}` }],
+            isError: true,
+          };
+        }
       }
 
       const meta = metadata as Record<string, unknown>;

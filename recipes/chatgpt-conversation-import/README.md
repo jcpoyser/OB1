@@ -236,9 +236,38 @@ The pyramid summaries are generated in the same LLM call as the thought extracti
 | `--openrouter-model ID` | Which OpenRouter model to use | `openai/gpt-4o-mini` |
 | `--ollama-model NAME` | Which Ollama model to use (requires `--model ollama`) | `qwen3` |
 | `--raw` | Skip LLM extraction, ingest user messages as-is | Off |
+| `--include-trivial` | Include short/untitled conversations normally filtered out. Does not override date filters, sync-log skips, or conversations explicitly marked do-not-remember. | Off |
 | `--verbose` | Print full thought text during processing | Off |
 | `--report FILE` | Write a markdown report of everything imported | None |
 | `--ingest-endpoint` | Use custom `INGEST_URL`/`INGEST_KEY` instead of Supabase direct insert | Off |
+
+## Literal full-history import
+
+The default import is curated: it extracts durable thoughts and filters throwaway conversations. If you want a literal transcript archive instead, use `--raw --include-trivial --max-words 0`:
+
+```bash
+python import-chatgpt.py path/to/chatgpt-export.zip --raw --include-trivial --max-words 0
+```
+
+This stores each conversation/session as a raw ChatGPT-sourced thought. It still respects the sync log, date filters, and conversations marked `do_not_remember` in the export.
+
+## Enterprise Compliance API export
+
+If your organization blocks self-service zip exports, ask a ChatGPT Enterprise workspace owner/admin for a Compliance API export of your own ChatGPT conversation logs as JSON or JSONL. The public OpenAI help docs say the detailed Compliance API documentation is only visible from inside the Enterprise workspace, so this recipe does not hard-code private endpoint paths.
+
+Once you have the JSON/JSONL export, convert it into the ChatGPT export format:
+
+```bash
+python compliance-to-chatgpt-export.py path/to/compliance-export.jsonl converted-compliance-export
+```
+
+Then ingest the converted export:
+
+```bash
+python import-chatgpt.py converted-compliance-export --raw --include-trivial --max-words 0
+```
+
+The converter is schema-tolerant and handles common arrays named `messages`, `items`, `events`, `logs`, or `records`. If it prints `No messages were detected`, save a small redacted sample object from the export and tighten the field mapping in `compliance-to-chatgpt-export.py`.
 
 ### `--focus` — Topic Filtering
 

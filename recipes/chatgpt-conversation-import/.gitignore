@@ -1,6 +1,8 @@
 chatgpt-sync-log.json
 *.env
+.venv/
 __pycache__/
+converted-compliance-export/
 # Import reports contain personal data — never commit
 *-report*.md
 full-import-report.md

@@ -418,6 +418,11 @@ def should_skip(conv, dialogue_text, message_count, sync_log, args):
     if conv.get("is_do_not_remember"):
         return "do_not_remember"
 
+    # Import everything except conversations already imported, outside date filters,
+    # or explicitly marked do-not-remember.
+    if getattr(args, "include_trivial", False):
+        return None
+
     # CLI override for min messages
     min_skip = getattr(args, "min_messages", MIN_MESSAGES_SKIP) or MIN_MESSAGES_SKIP
     min_always = MIN_MESSAGES_ALWAYS
